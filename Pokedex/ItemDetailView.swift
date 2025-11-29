@@ -99,19 +99,19 @@ struct ItemDetailView: View {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color.blue.opacity(0.2), Color.clear],
+                        colors: [Color.blue.opacity(0.05), Color.clear],
                         center: .center,
                         startRadius: 0,
                         endRadius: 100
                     )
                 )
                 .frame(width: 250, height: 250)
-            
-            Circle()
-                .stroke(AppTheme.Colors.border.opacity(0.5), lineWidth: 2)
-                .frame(width: 180, height: 180)
-                .background(Circle().fill(AppTheme.Colors.cardBackground(for: colorScheme)))
-                .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
+//            
+//            Circle()
+//                .stroke(AppTheme.Colors.border.opacity(0.5), lineWidth: 2)
+//                .frame(width: 180, height: 180)
+//                .background(Circle().fill(AppTheme.Colors.cardBackground(for: colorScheme)))
+//                .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
             
             AsyncImage(url: item.imageUrl) { phase in
                 switch phase {

@@ -8,7 +8,14 @@
 import SwiftUI
 
 struct FavouritesView: View {
+    @StateObject var viewModel = FavouritesViewModel()
     @Environment(\.colorScheme) var colorScheme
+    
+    private let columns = [
+        GridItem(.flexible(), spacing: AppTheme.Layout.gridSpacing),
+        GridItem(.flexible(), spacing: AppTheme.Layout.gridSpacing),
+        GridItem(.flexible(), spacing: AppTheme.Layout.gridSpacing)
+    ]
     
     var body: some View {
         NavigationStack {
@@ -16,25 +23,48 @@ struct FavouritesView: View {
                 AppTheme.Colors.background(for: colorScheme)
                     .ignoresSafeArea()
                 
-                VStack {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.red)
-                        .padding()
-                    
-                    Text("Favourites")
-                        .font(AppTheme.Typography.title())
-                        .fontWeight(.bold)
-                        .foregroundColor(AppTheme.Colors.primaryText(for: colorScheme))
-                    
-                    Text("Coming Soon...")
-                        .font(AppTheme.Typography.caption(size: 12))
-                        .foregroundColor(.gray)
-                        .padding(.top, 8)
+                if viewModel.favourites.isEmpty {
+                    emptyStateView
+                } else {
+                    favouritesGridView
                 }
             }
             .navigationTitle("Favourites")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    private var favouritesGridView: some View {
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: AppTheme.Layout.gridSpacing) {
+                ForEach(viewModel.favourites) { pokemon in
+                    NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
+                        PokemonCell(pokemon: pokemon)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .refreshable {
+            await viewModel.refresh()
+        }
+    }
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "heart.slash")
+                .font(.system(size: 60))
+                .foregroundColor(AppTheme.Colors.secondaryText(for: colorScheme).opacity(0.5))
+            
+            Text("No Favourites Yet")
+                .font(AppTheme.Typography.title())
+                .foregroundColor(AppTheme.Colors.primaryText(for: colorScheme))
+            
+            Text("Mark your favorite Pokemon with a heart to see them here!")
+                .font(AppTheme.Typography.body())
+                .foregroundColor(AppTheme.Colors.secondaryText(for: colorScheme))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
         }
     }
 }
@@ -42,4 +72,3 @@ struct FavouritesView: View {
 #Preview {
     FavouritesView()
 }
-

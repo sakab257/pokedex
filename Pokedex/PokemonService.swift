@@ -30,6 +30,9 @@ enum NetworkError: Error, LocalizedError {
 protocol PokemonServiceProtocol {
     func fetchPokemon(limit: Int) async throws -> [Pokemon]
     func fetchPokemonDetail(id: Int) async throws -> PokemonDetail
+    // Nouvelles méthodes
+    func fetchPokemonSpecies(id: Int) async throws -> PokemonSpecies
+    func fetchEvolutionChain(url: String) async throws -> EvolutionChainResponse
 }
 
 class PokemonService: PokemonServiceProtocol {
@@ -83,5 +86,33 @@ class PokemonService: PokemonServiceProtocol {
         } catch {
             throw NetworkError.decodingError
         }
+    }
+    
+    // 1. Récupérer l'espèce pour avoir l'URL de la chaine
+    func fetchPokemonSpecies(id: Int) async throws -> PokemonSpecies {
+        guard let url = URL(string: "\(baseURL)/pokemon-species/\(id)") else {
+            throw NetworkError.invalidURL
+        }
+        
+        let (data, response) = try await session.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw NetworkError.noData
+        }
+        
+        return try JSONDecoder().decode(PokemonSpecies.self, from: data)
+    }
+    
+    // 2. Récupérer la chaîne d'évolution via son URL
+    func fetchEvolutionChain(url: String) async throws -> EvolutionChainResponse {
+        guard let url = URL(string: url) else {
+            throw NetworkError.invalidURL
+        }
+        
+        let (data, response) = try await session.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw NetworkError.noData
+        }
+        
+        return try JSONDecoder().decode(EvolutionChainResponse.self, from: data)
     }
 }

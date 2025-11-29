@@ -10,6 +10,7 @@ import Foundation
 protocol PokemonRepositoryProtocol {
     func getPokemon(limit: Int, forceRefresh: Bool) async throws -> [Pokemon]
     func getPokemonDetail(id: Int) async throws -> PokemonDetail
+    func getEvolutionChain(for pokemonId: Int) async throws -> [Pokemon]
     func clearCache()
 }
 
@@ -22,9 +23,11 @@ class PokemonRepository: PokemonRepositoryProtocol {
     private enum CacheKey {
         static let pokemonList = "pokemon_list"
         static let lastFetchTime = "pokemon_last_fetch"
-        // Ajout de la clé pour le cache des détails
         static func pokemonDetail(_ id: Int) -> String {
             return "pokemon_detail_\(id)"
+        }
+        static func evolution(_ id: Int) -> String {
+            return "pokemon_evolution_\(id)"
         }
     }
     
@@ -40,44 +43,71 @@ class PokemonRepository: PokemonRepositoryProtocol {
     
     // MARK: - Methods
     func getPokemon(limit: Int = 151, forceRefresh: Bool = false) async throws -> [Pokemon] {
-        // Check if we should use cache
         if !forceRefresh {
             if let cachedPokemon = await getCachedPokemon(), await isCacheExpired() {
                 return cachedPokemon
             }
         }
-        
-        // Fetch from network
         let pokemon = try await service.fetchPokemon(limit: limit)
-        
-        // Update cache
         await cachePokemon(pokemon)
-        
         return pokemon
     }
     
-    // C'était la méthode manquante qui causait l'erreur
     func getPokemonDetail(id: Int) async throws -> PokemonDetail {
-        // Check cache first
         if let cachedDetail: PokemonDetail = await cache.get(forKey: CacheKey.pokemonDetail(id)) {
             return cachedDetail
         }
-        
-        // Fetch from network
         let detail = try await service.fetchPokemonDetail(id: id)
-        
-        // Cache it
         await cache.set(detail, forKey: CacheKey.pokemonDetail(id))
-        
         return detail
+    }
+    
+    // Récupération des évolutions
+    func getEvolutionChain(for pokemonId: Int) async throws -> [Pokemon] {
+        // Cache check
+        if let cachedEvolutions: [Pokemon] = await cache.get(forKey: CacheKey.evolution(pokemonId)) {
+            return cachedEvolutions
+        }
+        
+        // 1. Get Species
+        let species = try await service.fetchPokemonSpecies(id: pokemonId)
+        
+        // 2. Get Chain
+        let chainResponse = try await service.fetchEvolutionChain(url: species.evolutionChain.url)
+        
+        // 3. Aplatir l'arbre en liste
+        var evolutions: [Pokemon] = []
+        
+        func traverse(link: ChainLink) {
+            if let id = link.species.id {
+                // IMPORTANT: On reconstruit une URL de type "pokemon" et pas "pokemon-species"
+                // pour que le modèle Pokemon puisse générer correctement l'URL de l'image.
+                let properUrl = "https://pokeapi.co/api/v2/pokemon/\(id)/"
+                
+                let pokemon = Pokemon(
+                    name: link.species.name,
+                    url: properUrl
+                )
+                evolutions.append(pokemon)
+            }
+            
+            for nextLink in link.evolvesTo {
+                traverse(link: nextLink)
+            }
+        }
+        
+        traverse(link: chainResponse.chain)
+        
+        // Cache result
+        await cache.set(evolutions, forKey: CacheKey.evolution(pokemonId))
+        
+        return evolutions
     }
     
     func clearCache() {
         Task {
             await cache.remove(forKey: CacheKey.pokemonList)
             await cache.remove(forKey: CacheKey.lastFetchTime)
-            // Note: On ne vide pas forcément le cache des détails ici pour garder l'expérience fluide,
-            // ou on pourrait tout vider avec cache.clearAll() si nécessaire.
         }
     }
     
