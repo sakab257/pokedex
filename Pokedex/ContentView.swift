@@ -15,12 +15,12 @@ struct ContentView: View {
         TabView {
             PokemonListView()
                 .tabItem {
-                    Label("Pokédex", systemImage: "list.bullet.rectangle.portrait")
+                    Label("Pokédex", systemImage: "square.split.2x2")
                 }
             
             ItemsView()
                 .tabItem {
-                    Label("Items", systemImage: "cube.box.fill")
+                    Label("Items", systemImage: "backpack.fill")
                 }
             
             FavouritesView()
@@ -80,12 +80,13 @@ struct PokemonCell: View {
     let pokemon: Pokemon
     @Environment(\.colorScheme) var colorScheme
     
+    // Always black borders and text for better contrast with Pokémon colors
     var borderColor: Color {
-        colorScheme == .dark ? .white : .black
+        .black
     }
     
     var textColor: Color {
-        colorScheme == .dark ? .white : .black
+        .black
     }
     
     var body: some View {

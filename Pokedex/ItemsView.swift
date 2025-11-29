@@ -92,7 +92,7 @@ struct ItemRow: View {
             .shadow(color: borderColor.opacity(0.3), radius: 4, x: 3, y: 3)
             
             // Item info
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(item.name.replacingOccurrences(of: "-", with: " ").capitalized)
                     .font(.custom("Pixelmix", size: 14))
                     .fontWeight(.bold)
@@ -100,10 +100,10 @@ struct ItemRow: View {
                 
                 if let itemId = item.itemId,
                    let detail = viewModel.itemDetails[itemId] {
-                    Text(detail.englishEffect)
-                        .font(.custom("Pixelmix", size: 8))
+                    Text(detail.englishEffect.removeSpecialCharacters())
+                        .font(.custom("Pixelmix", size: 10))
                         .foregroundColor(textColor.opacity(0.7))
-                        .lineLimit(3)
+                        .lineLimit(5)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Text("Loading description...")
@@ -112,12 +112,12 @@ struct ItemRow: View {
                         .italic()
                 }
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, 12)
             
             Spacer()
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.vertical, 16)
         .background(backgroundColor)
         .overlay(
             Rectangle()
@@ -132,4 +132,19 @@ struct ItemRow: View {
 
 #Preview {
     ItemsView()
+}
+
+// Extension to remove special characters from strings
+extension String {
+    func removeSpecialCharacters() -> String {
+        // Remove accents and diacritics
+        let withoutAccents = self.folding(options: .diacriticInsensitive, locale: .current)
+        
+        // Keep only alphanumeric characters, spaces, and basic punctuation
+        let allowedCharacters = CharacterSet.alphanumerics
+            .union(.whitespaces)
+            .union(CharacterSet(charactersIn: ".,!?-:;()[]"))
+        
+        return withoutAccents.components(separatedBy: allowedCharacters.inverted).joined()
+    }
 }
