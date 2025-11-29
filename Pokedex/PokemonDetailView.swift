@@ -14,30 +14,35 @@ struct PokemonDetailView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) var dismiss
     
+    // Animation states
+    @State private var animateStats = false
+    @State private var rotateBackground = false
+    
     init(pokemon: Pokemon) {
         self.pokemon = pokemon
-        // Initialize the ViewModel with the specific pokemon ID
         _viewModel = StateObject(wrappedValue: PokemonDetailViewModel(pokemonId: pokemon.pokemonId ?? 1))
     }
     
     var body: some View {
         ZStack {
-            // Background color based on Pokemon type
-            pokemon.backgroundColor
-                .ignoresSafeArea()
+            // 1. FOND DYNAMIQUE
+            backgroundLayer
             
             ScrollView {
                 VStack(spacing: 0) {
-                    // Header (Name & ID)
+                    // Header (Nom & ID)
                     headerView
+                        .padding(.top, 20)
                     
-                    // Main Image
+                    // Image Principale
                     imageView
+                        .padding(.vertical, 20)
                     
-                    // Data Card
+                    // Carte de Données (Glassmorphism style)
                     dataCardView
+                        .padding(.top, 20)
                 }
-                .padding(.bottom, 30)
+                .padding(.bottom, 40)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -46,42 +51,100 @@ struct PokemonDetailView: View {
                 Button(action: {
                     // TODO: Implement toggle favourite
                 }) {
-                    Image(systemName: "heart")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
+                    Image(systemName: "heart.fill") // Changé en fill pour le style
+                        .foregroundColor(.white.opacity(0.8))
+                        .shadow(color: .black.opacity(0.2), radius: 2)
                 }
             }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.0).delay(0.3)) {
+                animateStats = true
+            }
+            withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
+                rotateBackground = true
+            }
+        }
+    }
+    
+    // MARK: - Visual Components
+    
+    private var backgroundLayer: some View {
+        ZStack {
+            // Couleur de base avec dégradé
+            LinearGradient(
+                colors: [pokemon.backgroundColor, pokemon.backgroundColor.opacity(0.6)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Watermark Pokeball Géante
+            GeometryReader { geo in
+                Image("Frame 1") // Ta texture Pokeball
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(.white)
+                    .opacity(0.15)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: geo.size.width * 1.5)
+                    .position(x: geo.size.width * 0.8, y: geo.size.height * 0.2)
+//                    .rotationEffect(.degrees(rotateBackground ? 360 : 0))
+                    .blur(radius: 2)
+            }
+            
+            // Particules décoratives (Cercles flous)
+            Circle()
+                .fill(.white.opacity(0.1))
+                .frame(width: 200, height: 200)
+                .blur(radius: 50)
+                .offset(x: -100, y: -200)
+            
+            Circle()
+                .fill(.black.opacity(0.1))
+                .frame(width: 300, height: 300)
+                .blur(radius: 60)
+                .offset(x: 150, y: 300)
         }
     }
     
     private var headerView: some View {
         HStack(alignment: .bottom) {
             Text(pokemon.name.capitalized)
-                .font(AppTheme.Typography.title(size: 32))
+                .font(AppTheme.Typography.title(size: 36))
                 .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.3), radius: 2, x: 2, y: 2)
+                .shadow(color: .black.opacity(0.2), radius: 4, x: 2, y: 2)
             
             Spacer()
             
             if let id = pokemon.pokemonId {
                 Text(String(format: "#%03d", id))
                     .font(AppTheme.Typography.pokemonNumber(size: 24))
-                    .foregroundColor(.white.opacity(0.8))
+                    .fontWeight(.black)
+                    .foregroundColor(.white.opacity(0.9))
+                    .shadow(color: .black.opacity(0.1), radius: 2)
             }
         }
         .padding(.horizontal, 24)
-        .padding(.top, 20)
     }
     
     private var imageView: some View {
         ZStack {
-            // Subtle pixelated circle glow behind
+            // Aura brillante derrière le Pokémon
             Circle()
-                .fill(Color.white.opacity(0.3))
+                .fill(.white.opacity(0.2))
+                .frame(width: 260, height: 260)
+                .blur(radius: 10)
+            
+            Circle()
+                .stroke(.white.opacity(0.5), lineWidth: 2)
                 .frame(width: 250, height: 250)
                 .overlay(
                     Circle()
-                        .stroke(Color.white.opacity(0.5), lineWidth: 4)
+                        .stroke(style: StrokeStyle(lineWidth: 10, dash: [5, 15]))
+                        .foregroundColor(.white.opacity(0.3))
+                        .frame(width: 280, height: 280)
+                        .rotationEffect(.degrees(rotateBackground ? -360 : 0)) // Tourne en sens inverse
                 )
             
             AsyncImage(url: pokemon.imageUrl) { phase in
@@ -91,9 +154,11 @@ struct PokemonDetailView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 240, height: 240)
-                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 10)
+                        .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 10)
+                        .scaleEffect(animateStats ? 1.0 : 0.8) // Petit pop à l'apparition
+                        .animation(.spring(response: 0.6, dampingFraction: 0.6), value: animateStats)
                 case .failure:
-                    Image(systemName: "questionmark.circle.fill")
+                    Image(systemName: "questionmark")
                         .font(.system(size: 80))
                         .foregroundColor(.white.opacity(0.5))
                 default:
@@ -102,17 +167,17 @@ struct PokemonDetailView: View {
                 }
             }
         }
-        .padding(.vertical, 30)
     }
     
     @ViewBuilder
     private var dataCardView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 30) {
             switch viewModel.state {
             case .loading:
                 ProgressView()
                     .scaleEffect(1.5)
                     .padding(50)
+                    .tint(AppTheme.Colors.primaryText(for: colorScheme))
                 
             case .error(let message):
                 VStack {
@@ -126,109 +191,117 @@ struct PokemonDetailView: View {
                 .padding(50)
                 
             case .loaded(let detail):
-                // Types
+                // Types (Badges modernes)
                 typesView(types: detail.typeNames)
                 
-                // Physical Stats (Weight/Height)
+                // Stats Physiques (Poids/Taille)
                 physicalStatsView(detail: detail)
                 
-                // Base Stats
-                baseStatsView(stats: detail.stats)
+                // Base Stats (Barres animées)
+                baseStatsView(stats: detail.stats, color: pokemon.backgroundColor)
             }
         }
         .padding(.vertical, 32)
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity)
-        .background(AppTheme.Colors.cardBackground(for: colorScheme))
-        .cornerRadius(30) // Rounded top corners
-        .overlay(
-            RoundedRectangle(cornerRadius: 30)
-                .stroke(AppTheme.Colors.border, lineWidth: AppTheme.Layout.borderWidth)
+        .background(
+            // Fond blanc/noir style "Carte" avec bords arrondis
+            AppTheme.Colors.cardBackground(for: colorScheme)
+                .opacity(0.95) // Légère transparence
         )
-        .padding(.top, -20) // Overlap slightly with image
+        .cornerRadius(40, corners: [.topLeft, .topRight]) // Coin custom (voir extension plus bas)
+        .shadow(color: .black.opacity(0.1), radius: 20, y: -5)
     }
     
     private func typesView(types: [String]) -> some View {
         HStack(spacing: 16) {
             ForEach(types, id: \.self) { type in
-                Text(type.capitalized)
-                    .font(AppTheme.Typography.body())
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 8)
-                    .background(TypeColorHelper.color(for: type))
-                    .cornerRadius(20)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(AppTheme.Colors.border, lineWidth: 2)
-                    )
+                HStack(spacing: 8) {
+                    // Petite icône de type (système pour l'instant)
+                    Image(systemName: "flame.fill") // Placeholder, idéalement une icône spécifique
+                        .font(.caption)
+                    Text(type.capitalized)
+                        .font(AppTheme.Typography.body())
+                        .fontWeight(.bold)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .foregroundColor(.white)
+                .background(TypeColorHelper.color(for: type))
+                .clipShape(Capsule())
+                .shadow(color: TypeColorHelper.color(for: type).opacity(0.5), radius: 5, y: 3)
             }
         }
     }
     
     private func physicalStatsView(detail: PokemonDetail) -> some View {
         HStack(spacing: 40) {
-            VStack(spacing: 8) {
-                Text("Weight")
-                    .font(AppTheme.Typography.caption(size: 14))
-                    .foregroundColor(.gray)
-                
-                HStack(spacing: 4) {
-                    Image(systemName: "scalemass")
-                    Text(String(format: "%.1f KG", detail.weightInKg))
-                }
-                .font(AppTheme.Typography.body())
-            }
+            statItem(title: "Weight", value: String(format: "%.1f KG", detail.weightInKg), icon: "scalemass.fill")
             
             Divider()
                 .frame(height: 40)
+                .background(Color.gray.opacity(0.3))
             
-            VStack(spacing: 8) {
-                Text("Height")
+            statItem(title: "Height", value: String(format: "%.1f M", detail.heightInMeters), icon: "ruler.fill")
+        }
+        .padding(.vertical, 10)
+    }
+    
+    private func statItem(title: String, value: String, icon: String) -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .foregroundColor(.gray)
+                Text(title)
                     .font(AppTheme.Typography.caption(size: 14))
                     .foregroundColor(.gray)
-                
-                HStack(spacing: 4) {
-                    Image(systemName: "ruler")
-                    Text(String(format: "%.1f M", detail.heightInMeters))
-                }
-                .font(AppTheme.Typography.body())
             }
+            
+            Text(value)
+                .font(AppTheme.Typography.title(size: 20)) // Plus gros
+                .foregroundColor(AppTheme.Colors.primaryText(for: colorScheme))
         }
     }
     
-    private func baseStatsView(stats: [PokemonDetail.PokemonStat]) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+    private func baseStatsView(stats: [PokemonDetail.PokemonStat], color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 20) {
             Text("Base Stats")
-                .font(AppTheme.Typography.title(size: 18))
-                .padding(.bottom, 8)
+                .font(AppTheme.Typography.title(size: 22))
+                .foregroundColor(color) // Titre coloré comme le Pokemon
+                .padding(.bottom, 5)
             
             ForEach(stats) { stat in
-                HStack {
+                HStack(spacing: 12) {
                     Text(statShortName(stat.stat.name))
-                        .font(AppTheme.Typography.body())
+                        .font(AppTheme.Typography.body(size: 12))
+                        .fontWeight(.bold)
                         .foregroundColor(.gray)
-                        .frame(width: 40, alignment: .leading)
+                        .frame(width: 45, alignment: .leading)
                     
                     Text("\(stat.baseStat)")
                         .font(AppTheme.Typography.body())
                         .fontWeight(.bold)
                         .frame(width: 35, alignment: .trailing)
                     
+                    // Barre de progression animée
                     GeometryReader { geometry in
                         ZStack(alignment: .leading) {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
-                                .frame(height: 12)
+                            Capsule()
+                                .fill(Color.gray.opacity(0.1))
+                                .frame(height: 10)
                             
-                            Rectangle()
-                                .fill(statColor(stat.baseStat))
-                                .frame(width: geometry.size.width * (CGFloat(stat.baseStat) / 255.0), height: 12)
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [statColor(stat.baseStat), statColor(stat.baseStat).opacity(0.6)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: animateStats ? geometry.size.width * (CGFloat(stat.baseStat) / 255.0) : 0, height: 10)
                         }
-                        .cornerRadius(6)
                     }
-                    .frame(height: 12)
+                    .frame(height: 10)
                 }
             }
         }
@@ -255,7 +328,24 @@ struct PokemonDetailView: View {
     }
 }
 
-// MARK: - Local ViewModel
+// Extension pour arrondir seulement certains coins
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+    
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
+    }
+}
+
+// MARK: - Local ViewModel (inchangé)
 @MainActor
 class PokemonDetailViewModel: ObservableObject {
     enum State {
@@ -288,7 +378,7 @@ class PokemonDetailViewModel: ObservableObject {
     }
 }
 
-// MARK: - Type Color Helper
+// MARK: - Type Color Helper (inchangé)
 struct TypeColorHelper {
     static func color(for type: String) -> Color {
         switch type.lowercased() {
