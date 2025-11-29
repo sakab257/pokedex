@@ -40,29 +40,45 @@ A modern, retro-styled Pokédex application built with SwiftUI that displays Gen
 
 **MVVM Pattern** with SwiftUI and Swift Concurrency
 
-**Models**
-- `Pokemon.swift`: Pokémon data models, 151 custom colors, hex color extension
-- `Item.swift`: Item data models with detailed effects
-- `Evolution.swift`: Recursive models for parsing evolution chains
-
-**ViewModels**
-- `PokemonViewModel.swift`: Fetches and filters Pokémon list
-- `PokemonDetailViewModel.swift`: Manages detailed data and evolution chains
-- `ItemViewModel.swift`: Manages items with lazy detail loading
-- `FavouritesViewModel.swift`: Manages the favourites list display
-
-**Managers & Services**
-- `PokemonService.swift` & `ItemService.swift`: API networking layer
-- `PokemonRepository.swift`: Data coordination and caching logic
-- `FavouritesManager.swift`: Singleton managing persistence of favourite Pokémon
-- `CachedImage.swift`: Custom image loader with NSCache for optimal performance
-
-**Views**
-- `ContentView.swift`: Main TabView configuration with custom appearance
-- `PokemonListView.swift`: Main grid display
-- `PokemonDetailView.swift`: Rich detail view with stats and evolutions
-- `ItemsView.swift` & `ItemDetailView.swift`: Item browsing
-- `FavouritesView.swift`: List of saved Pokémon
+```
+Pokedex/
+├── App/
+│   └── PokedexApp.swift              # App entry point
+├── Models/
+│   ├── Pokemon.swift                  # Pokémon data models, 151 custom colors
+│   ├── Item.swift                     # Item data models with detailed effects
+│   ├── Evolution.swift                # Recursive models for evolution chains
+│   └── PokemonDetail.swift            # Detailed Pokémon information model
+├── Views/
+│   ├── ContentView.swift              # Main TabView configuration
+│   ├── PokemonListView.swift          # Main grid display
+│   ├── PokemonDetailView.swift        # Rich detail view with stats/evolutions
+│   ├── PokemonCell.swift              # Custom cell for Pokémon grid
+│   ├── ItemsView.swift                # Items browsing list
+│   ├── ItemDetailView.swift           # Detailed item information
+│   └── FavouritesView.swift           # List of saved Pokémon
+├── ViewModels/
+│   ├── PokemonViewModel.swift         # Fetches and filters Pokémon list
+│   ├── ItemViewModel.swift            # Manages items with lazy detail loading
+│   └── FavouritesViewModel.swift      # Manages favourites list display
+├── Services/
+│   ├── PokemonService.swift           # API networking for Pokémon
+│   └── ItemService.swift              # API networking for Items
+├── Repositories/
+│   ├── PokemonRepository.swift        # Data coordination and caching
+│   └── ItemRepository.swift           # Item data coordination
+├── Managers/
+│   └── FavouritesManager.swift        # Singleton for favourites persistence
+├── Utils/
+│   ├── CachedImage.swift              # Custom image loader with NSCache
+│   ├── Cache.swift                    # Generic caching utility
+│   ├── Theme.swift                    # App-wide theme configuration
+│   └── PokemonColorMap.swift          # 151 unique Pokémon colors mapping
+└── Resources/
+    ├── Assets.xcassets                # App icons and image assets
+    ├── pixelmix.ttf                   # Retro pixel font
+    └── Info.plist                     # App configuration
+```
 
 🛠 Tech Stack
 
