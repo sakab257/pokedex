@@ -9,40 +9,71 @@ import Foundation
 import SwiftUI
 import Combine
 
+@MainActor
 class PokemonViewModel: ObservableObject {
-    // @Published notifies the view when data changes to refresh the screen
+    // MARK: - Published Properties
     @Published var pokemonList: [Pokemon] = []
     @Published var searchText: String = ""
+    @Published var state: LoadingState = .idle
     
-    // Filtered list based on search
+    // MARK: - State
+    enum LoadingState: Equatable {
+        case idle
+        case loading
+        case loaded
+        case error(String)
+        
+        var isLoading: Bool {
+            if case .loading = self { return true }
+            return false
+        }
+    }
+    
+    // MARK: - Computed Properties
     var filteredPokemonList: [Pokemon] {
         if searchText.isEmpty {
             return pokemonList
         } else {
-            return pokemonList.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+            return pokemonList.filter { 
+                $0.name.lowercased().contains(searchText.lowercased()) 
+            }
         }
     }
     
-    init() {
+    // MARK: - Dependencies
+    private let repository: PokemonRepositoryProtocol
+    
+    // MARK: - Initialization
+    init(repository: PokemonRepositoryProtocol = PokemonRepository()) {
+        self.repository = repository
+        
         Task {
             await fetchPokemon()
         }
     }
     
-    @MainActor
-    func fetchPokemon() async {
-        // Fetch the first 151 Pokémon (Gen 1)
-        guard let url = URL(string: "https://pokeapi.co/api/v2/pokemon?limit=151") else { return }
+    // MARK: - Methods
+    func fetchPokemon(forceRefresh: Bool = false) async {
+        guard state != .loading else { return }
+        
+        state = .loading
         
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let decodedResponse = try JSONDecoder().decode(PokemonResponse.self, from: data)
-            
-            // With @MainActor, we're already on the main thread
-            self.pokemonList = decodedResponse.results
-            
+            let pokemon = try await repository.getPokemon(limit: 151, forceRefresh: forceRefresh)
+            pokemonList = pokemon
+            state = .loaded
+        } catch let error as NetworkError {
+            state = .error(error.localizedDescription)
         } catch {
-            fatalError("Error: \(error)")
+            state = .error("An unexpected error occurred. Please try again.")
         }
+    }
+    
+    func retry() async {
+        await fetchPokemon(forceRefresh: true)
+    }
+    
+    func refresh() async {
+        await fetchPokemon(forceRefresh: true)
     }
 }

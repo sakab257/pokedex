@@ -9,65 +9,67 @@ import Foundation
 import SwiftUI
 import Combine
 
+@MainActor
 class ItemViewModel: ObservableObject {
+    // MARK: - Published Properties
     @Published var items: [ItemSummary] = []
     @Published var itemDetails: [Int: ItemDetail] = [:]
     @Published var searchText: String = ""
+    @Published var state: LoadingState = .idle
     
-    // Filtered list based on search
+    // MARK: - State
+    enum LoadingState: Equatable {
+        case idle
+        case loading
+        case loaded
+        case error(String)
+        
+        var isLoading: Bool {
+            if case .loading = self { return true }
+            return false
+        }
+    }
+    
+    // MARK: - Computed Properties
     var filteredItems: [ItemSummary] {
         if searchText.isEmpty {
             return items
         } else {
-            return items.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+            return items.filter { 
+                $0.name.lowercased().contains(searchText.lowercased()) 
+            }
         }
     }
     
-    init() {
+    // MARK: - Dependencies
+    private let repository: ItemRepositoryProtocol
+    
+    // MARK: - Initialization
+    init(repository: ItemRepositoryProtocol = ItemRepository()) {
+        self.repository = repository
+        
         Task {
             await fetchItems()
         }
     }
     
-    @MainActor
-    func fetchItems() async {
-        // Fetch the first 200 items
-        guard let url = URL(string: "https://pokeapi.co/api/v2/item?limit=200") else { return }
+    // MARK: - Methods
+    func fetchItems(forceRefresh: Bool = false) async {
+        guard state != .loading else { return }
+        
+        state = .loading
         
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let decodedResponse = try JSONDecoder().decode(ItemResponse.self, from: data)
-            self.items = decodedResponse.results
-            
-            // Fetch details for each item
-            await fetchItemDetails()
+            let fetchedItems = try await repository.getItems(limit: 200, forceRefresh: forceRefresh)
+            items = fetchedItems
+            state = .loaded
+        } catch let error as NetworkError {
+            state = .error(error.localizedDescription)
         } catch {
-            print("Error fetching items: \(error)")
+            state = .error("An unexpected error occurred. Please try again.")
         }
     }
     
-    @MainActor
-    private func fetchItemDetails() async {
-        // Fetch details for visible items (first 50 to avoid rate limiting)
-        for item in items.prefix(50) {
-            guard let id = item.itemId else { continue }
-            
-            // Skip if already loaded
-            if itemDetails[id] != nil { continue }
-            
-            do {
-                let detailUrl = URL(string: "https://pokeapi.co/api/v2/item/\(id)/")!
-                let (data, _) = try await URLSession.shared.data(from: detailUrl)
-                let detail = try JSONDecoder().decode(ItemDetail.self, from: data)
-                itemDetails[id] = detail
-            } catch {
-                print("Error fetching detail for item \(id): \(error)")
-            }
-        }
-    }
-    
-    // Fetch detail for a specific item on demand
-    @MainActor
     func fetchItemDetail(for item: ItemSummary) async {
         guard let id = item.itemId else { return }
         
@@ -75,12 +77,19 @@ class ItemViewModel: ObservableObject {
         if itemDetails[id] != nil { return }
         
         do {
-            let detailUrl = URL(string: "https://pokeapi.co/api/v2/item/\(id)/")!
-            let (data, _) = try await URLSession.shared.data(from: detailUrl)
-            let detail = try JSONDecoder().decode(ItemDetail.self, from: data)
+            let detail = try await repository.getItemDetail(id: id)
             itemDetails[id] = detail
         } catch {
-            print("Error fetching detail for item \(id): \(error)")
+            // Silently fail for individual item details to not disrupt the list
+            print("Error fetching detail for item \(id): \(error.localizedDescription)")
         }
+    }
+    
+    func retry() async {
+        await fetchItems(forceRefresh: true)
+    }
+    
+    func refresh() async {
+        await fetchItems(forceRefresh: true)
     }
 }

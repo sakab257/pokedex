@@ -10,19 +10,10 @@ import SwiftUI
 struct FavouritesView: View {
     @Environment(\.colorScheme) var colorScheme
     
-    var backgroundColor: Color {
-        colorScheme == .dark ? Color(hex: "#1A1A1A") : Color(hex: "#F5F5F5")
-    }
-    
-    var textColor: Color {
-        colorScheme == .dark ? .white : .black
-    }
-    
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background color that ignores safe area
-                backgroundColor
+                AppTheme.Colors.background(for: colorScheme)
                     .ignoresSafeArea()
                 
                 VStack {
@@ -32,12 +23,12 @@ struct FavouritesView: View {
                         .padding()
                     
                     Text("Favourites")
-                        .font(.custom("Pixelmix", size: 20))
+                        .font(AppTheme.Typography.title())
                         .fontWeight(.bold)
-                        .foregroundColor(textColor)
+                        .foregroundColor(AppTheme.Colors.primaryText(for: colorScheme))
                     
                     Text("Coming Soon...")
-                        .font(.custom("Pixelmix", size: 12))
+                        .font(AppTheme.Typography.caption(size: 12))
                         .foregroundColor(.gray)
                         .padding(.top, 8)
                 }
@@ -51,3 +42,4 @@ struct FavouritesView: View {
 #Preview {
     FavouritesView()
 }
+

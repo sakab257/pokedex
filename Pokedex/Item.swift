@@ -7,12 +7,10 @@
 
 import Foundation
 
-// Structure for the item list response
 struct ItemResponse: Codable {
     let results: [ItemSummary]
 }
 
-// Summary of an item from the list endpoint
 struct ItemSummary: Codable, Identifiable {
     let name: String
     let url: String
@@ -21,7 +19,6 @@ struct ItemSummary: Codable, Identifiable {
         return url
     }
     
-    // Extract item ID from URL
     var itemId: Int? {
         let components = url.split(separator: "/")
         if let itemIndex = components.firstIndex(of: "item"),
@@ -31,14 +28,12 @@ struct ItemSummary: Codable, Identifiable {
         return nil
     }
     
-    // Image URL for the item
     var imageUrl: URL? {
         guard let id = itemId else { return nil }
         return URL(string: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/\(name).png")
     }
 }
 
-// Detailed item information
 struct ItemDetail: Codable {
     let id: Int
     let name: String
