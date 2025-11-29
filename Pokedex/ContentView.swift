@@ -7,9 +7,36 @@
 
 import SwiftUI
 
+// Main tab view container
 struct ContentView: View {
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        TabView {
+            PokemonListView()
+                .tabItem {
+                    Label("Pokédex", systemImage: "list.bullet.rectangle.portrait")
+                }
+            
+            ItemsView()
+                .tabItem {
+                    Label("Items", systemImage: "cube.box.fill")
+                }
+            
+            FavouritesView()
+                .tabItem {
+                    Label("Favourites", systemImage: "heart.fill")
+                }
+        }
+        .preferredColorScheme(nil) // Allow system to control
+    }
+}
+
+// Pokemon list view (previously ContentView)
+struct PokemonListView: View {
     // Instantiate our ViewModel
     @StateObject var viewModel = PokemonViewModel()
+    @Environment(\.colorScheme) var colorScheme
     
     // Grid configuration (3 columns with no spacing)
     let columns = [
@@ -18,16 +45,26 @@ struct ContentView: View {
         GridItem(.flexible(), spacing: 0)
     ]
     
+    var backgroundColor: Color {
+        colorScheme == .dark ? Color(hex: "#1A1A1A") : Color(hex: "#F5F5F5")
+    }
+    
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 0) {
-                    ForEach(viewModel.filteredPokemonList) { pokemon in
-                        PokemonCell(pokemon: pokemon)
+            ZStack {
+                // Background color that ignores safe area
+                backgroundColor
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 0) {
+                        ForEach(viewModel.filteredPokemonList) { pokemon in
+                            PokemonCell(pokemon: pokemon)
+                        }
                     }
                 }
             }
-            .navigationTitle("Pokédex")
+            .navigationTitle("Pokedex")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(
                 text: $viewModel.searchText,
@@ -41,6 +78,15 @@ struct ContentView: View {
 // A subview to keep the code clean
 struct PokemonCell: View {
     let pokemon: Pokemon
+    @Environment(\.colorScheme) var colorScheme
+    
+    var borderColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
+    
+    var textColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -56,7 +102,7 @@ struct PokemonCell: View {
                     case .failure:
                         Image(systemName: "photo") // Default image if error
                             .font(.system(size: 30))
-                            .foregroundColor(.black.opacity(0.3))
+                            .foregroundColor(textColor.opacity(0.3))
                             .frame(width: 70, height: 70)
                     default:
                         ProgressView() // Loading spinner
@@ -67,7 +113,7 @@ struct PokemonCell: View {
                 Text(pokemon.name.capitalized)
                     .font(.custom("Pixelmix", size: 12))
                     .fontWeight(.bold)
-                    .foregroundColor(.black)
+                    .foregroundColor(textColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
                     .padding(.horizontal, 2)
@@ -78,7 +124,7 @@ struct PokemonCell: View {
             .background(pokemon.backgroundColor)
             .overlay(
                 Rectangle()
-                    .stroke(.black, lineWidth: 3)
+                    .stroke(borderColor, lineWidth: 3)
             )
             
             // Pokemon number in top-right corner
@@ -86,7 +132,7 @@ struct PokemonCell: View {
                 Text("#\(pokemonId)")
                     .font(.custom("Pixelmix", size: 12))
                     .fontWeight(.bold)
-                    .foregroundColor(.black)
+                    .foregroundColor(textColor)
                     .padding(5)
             }
         }
