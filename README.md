@@ -2,6 +2,10 @@
 
 A modern, retro-styled Pokédex application built with SwiftUI that displays Generation 1 Pokémon and items using the PokéAPI.
 
+## 🎥 Demo
+
+[Watch the demo video](https://youtube.com/shorts/cNhrvyJPCrU)
+
 ✨ Features
 
 ✅ Implemented
