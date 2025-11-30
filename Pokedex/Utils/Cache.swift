@@ -7,11 +7,12 @@
 
 import Foundation
 
+// CORRECTION : Ajout de 'async' au protocole pour supporter les Actors
 protocol CacheProtocol {
-    func get<T>(forKey key: String) -> T?
-    func set<T>(_ value: T, forKey key: String)
-    func remove(forKey key: String)
-    func clearAll()
+    func get<T>(forKey key: String) async -> T?
+    func set<T>(_ value: T, forKey key: String) async
+    func remove(forKey key: String) async
+    func clearAll() async
 }
 
 /// Thread-safe in-memory cache
@@ -49,7 +50,9 @@ class PersistentCache: CacheProtocol {
     
     private init() {}
     
-    func get<T>(forKey key: String) -> T? {
+    // Les fonctions doivent être marquées 'async' pour satisfaire le protocole,
+    // même si UserDefaults est techniquement synchrone.
+    func get<T>(forKey key: String) async -> T? {
         // For simple types
         if let value = userDefaults.object(forKey: key) as? T {
             return value
@@ -68,7 +71,7 @@ class PersistentCache: CacheProtocol {
         return try? decoder.decode(decodableType, from: data) as? T
     }
     
-    func set<T>(_ value: T, forKey key: String) {
+    func set<T>(_ value: T, forKey key: String) async {
         // For simple types
         if value is String || value is Int || value is Double || value is Bool || value is Date {
             userDefaults.set(value, forKey: key)
@@ -82,11 +85,11 @@ class PersistentCache: CacheProtocol {
         }
     }
     
-    func remove(forKey key: String) {
+    func remove(forKey key: String) async {
         userDefaults.removeObject(forKey: key)
     }
     
-    func clearAll() {
+    func clearAll() async {
         if let bundleID = Bundle.main.bundleIdentifier {
             userDefaults.removePersistentDomain(forName: bundleID)
         }

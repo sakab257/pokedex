@@ -29,7 +29,8 @@ struct ItemSummary: Codable, Identifiable {
     }
     
     var imageUrl: URL? {
-        guard let id = itemId else { return nil }
+        // CORRECTION : On vérifie juste que l'ID existe, pas besoin de créer une variable 'id' inutilisée
+        guard itemId != nil else { return nil }
         return URL(string: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/\(name).png")
     }
 }
