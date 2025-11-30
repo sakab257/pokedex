@@ -1,4 +1,4 @@
-📱 Pokédex App
+# 📱 Pokédex App
 
 A modern, retro-styled Pokédex application built with SwiftUI that displays Generation 1 Pokémon and items using the PokéAPI.
 
@@ -6,7 +6,7 @@ A modern, retro-styled Pokédex application built with SwiftUI that displays Gen
 
 [Watch the demo video](https://youtube.com/shorts/cNhrvyJPCrU)
 
-✨ Features
+## ✨ Features
 
 ✅ Implemented
 
@@ -33,14 +33,14 @@ A modern, retro-styled Pokédex application built with SwiftUI that displays Gen
   - Async/await concurrency
   - Lazy loading for lists and grids
 
-🚧 Next Steps
+## 🚧 Next Steps
 
 - [ ] Filter Pokémon by type
 - [ ] Sort options (by number, name, type)
 - [ ] Pokémon abilities and moves database
 - [ ] Type effectiveness chart
 
-🏗 Architecture
+## 🏗 Architecture
 
 **MVVM Pattern** with SwiftUI and Swift Concurrency
 
@@ -84,7 +84,7 @@ Pokedex/
     └── Info.plist                     # App configuration
 ```
 
-🛠 Tech Stack
+## 🛠 Tech Stack
 
 - **SwiftUI**: Declarative UI
 - **Swift Concurrency**: async/await for networking
@@ -92,7 +92,7 @@ Pokedex/
 - **UserDefaults**: Simple data persistence
 - **PokéAPI**: RESTful Pokémon data source
 
-🚀 Getting Started
+## 🚀 Getting Started
 
 **Prerequisites**
 - Xcode 15.0+
@@ -116,17 +116,17 @@ Ensure `Info.plist` contains:
 </array>
 ```
 
-🎨 Design
+## 🎨 Design
 
 - **Retro aesthetic**: Pixel font, 3px borders, unique Pokémon colors
 - **Visuals**: Watermark backgrounds, animated progress bars, floating effects for items
 - **Dark mode**: Fully supported with custom adaptive colors
 
-📄 License
+## 📄 License
 
-Educational purposes. Pokémon © Nintendo/Creatures Inc./GAME FREAK Inc.
+Built for educational purposes. Pokémon © Nintendo/Creatures Inc./GAME FREAK Inc.
 
-🙏 Credits
+## 🙏 Credits
 
 - [PokéAPI](https://pokeapi.co/) - Free Pokémon API
 - [Pixelmix Font](https://www.dafont.com/pixelmix.font) - Retro typography
@@ -134,4 +134,4 @@ Educational purposes. Pokémon © Nintendo/Creatures Inc./GAME FREAK Inc.
 
 ---
 
-Created by Salim • November 2025
+Created by Salim BOUSKINE • November 2025
